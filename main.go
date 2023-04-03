@@ -2,16 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Slice that will contain all the available products
-var products []Product
+var products []Product // Slice that will contain all the available products
+var autoId int         // Auto-incremental id for products
 
 func main() {
 	// Get the data from the JSON file
@@ -20,17 +20,23 @@ func main() {
 		panic(err)
 	}
 
+	// Assign the last id value to the autoId variable
+	autoId = products[len(products)-1].Id
+
 	// Create a gin router
 	router := gin.Default()
 
-	// Endpoints
+	// Ungrouped endpoints
 	router.GET("/ping", pongHandler)
 
 	// Product endpoints
 	productGroup := router.Group("/products")
-	productGroup.GET("/all", getAllProductsHandler)
-	productGroup.GET("/:id", getProductByIdHandler)
-	productGroup.GET("/search", getProductByPriceHandler)
+	{
+		productGroup.GET("/all", getAllProductsHandler)
+		productGroup.GET("/:id", getProductByIdHandler)       // using parameters
+		productGroup.GET("/search", getProductByPriceHandler) //using query parameters
+		productGroup.POST("/new", createProductHandler)
+	}
 
 	// Start the server
 	err = router.Run(":8080")
@@ -39,16 +45,28 @@ func main() {
 	}
 }
 
-// Product represents a product from the supermarket.
+/*
+----------------------------------------------------------------
+PRODUCT DEFINITION
+----------------------------------------------------------------
+*/
+
+// Product represents a single product from the supermarket.
 type Product struct {
 	Id          int     `json:"id"`
-	Name        string  `json:"name"`
-	Quantity    int     `json:"quantity"`
-	CodeValue   string  `json:"code_value"`
+	Name        string  `json:"name" binding:"required"`
+	Quantity    int     `json:"quantity" binding:"required"`
+	CodeValue   string  `json:"code_value" binding:"required"`
 	IsPublished bool    `json:"is_published"`
-	Expiration  string  `json:"expiration"`
-	Price       float64 `json:"price"`
+	Expiration  string  `json:"expiration" binding:"required"`
+	Price       float64 `json:"price" binding:"required"`
 }
+
+/*
+------------------------------------------------------------------------------
+AUXILIARY FUNCTIONS
+------------------------------------------------------------------------------
+*/
 
 /*
 This function extracts the data from the given JSON file and stores it in the given slice.
@@ -71,6 +89,26 @@ func extractData(filename string, target *[]Product) error {
 	return nil
 }
 
+// This function checks if the given date string is a valid date.
+func isValidDate(date string) bool {
+	parsedDate, err := time.Parse("02/01/2006", date)
+	if err != nil {
+		return false
+	}
+
+	if err == nil && parsedDate.After(time.Now()) {
+		return true
+	}
+
+	return false
+}
+
+/*
+------------------------------------------------------------------------------
+HANDLERS
+------------------------------------------------------------------------------
+*/
+
 // Handles the request for the /ping endpoint. It returns a simple text response ("pong").
 func pongHandler(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
@@ -83,6 +121,7 @@ func getAllProductsHandler(c *gin.Context) {
 
 // Handles the request for a single product based on its ID.
 func getProductByIdHandler(c *gin.Context) {
+	var ()
 	// Obtains the product id from a query
 	idString := c.Param("id")
 
@@ -91,7 +130,7 @@ func getProductByIdHandler(c *gin.Context) {
 
 	// If the id is not valid return a 400 status code
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
@@ -120,8 +159,7 @@ func getProductByPriceHandler(c *gin.Context) {
 
 	// If the price is not valid return a 400 status code
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "error de parseo"})
-		fmt.Println("error parsing")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid price"})
 		return
 	}
 
@@ -139,4 +177,39 @@ func getProductByPriceHandler(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, filteredProducts)
 	}
+}
+
+// Handles the request for creating a new product.
+func createProductHandler(c *gin.Context) {
+	var newProduct Product
+
+	// Obtains the new product data from the request body
+	if err := c.ShouldBindJSON(&newProduct); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Checks if the product expiration date is valid (DD/MM/YYYY)
+	if !isValidDate(newProduct.Expiration) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Product expiration date is invalid"})
+		return
+	}
+
+	// Checks if the code value is unique
+	for _, storedProduct := range products {
+		if newProduct.CodeValue == storedProduct.CodeValue {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Product code cannot be duplicated"})
+			return
+		}
+	}
+
+	// Increment the autoId variable value and assign it to the new product
+	autoId++
+	newProduct.Id = autoId
+
+	// Store the new product in the products slice
+	products = append(products, newProduct)
+
+	// Return a 200 status code with the new product
+	c.JSON(http.StatusCreated, newProduct)
 }
