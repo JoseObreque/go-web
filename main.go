@@ -15,7 +15,7 @@ var products []Product
 
 func main() {
 	// Get the data from the JSON file
-	err := extractData("./exercise_1/products.json", &products)
+	err := extractData("products.json", &products)
 	if err != nil {
 		panic(err)
 	}
