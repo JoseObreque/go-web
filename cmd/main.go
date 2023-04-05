@@ -1,14 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/JoseObreque/go-web/cmd/server/handler"
-	"github.com/JoseObreque/go-web/internal/domain"
 	"github.com/JoseObreque/go-web/internal/product"
+	"github.com/JoseObreque/go-web/pkg/store"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"net/http"
-	"os"
 )
 
 func main() {
@@ -19,8 +17,8 @@ func main() {
 	}
 
 	// Extract products data from the JSON file
-	var productList []domain.Product
-	err = extractData("products.json", &productList)
+	jsonStore := store.NewJsonStore("products.json")
+	productList, err := jsonStore.GetAll()
 	if err != nil {
 		panic(err)
 	}
@@ -55,25 +53,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-/*
-This function extracts the data from the given JSON file and stores it in the given slice.
-It returns an error if the file cannot be opened.
-*/
-func extractData(filename string, target *[]domain.Product) error {
-	// read the JSON file
-	data, err := os.ReadFile(filename)
-
-	// If there is an error opening the file, is returned
-	if err != nil {
-		return err
-	}
-
-	// Unmarshal the JSON into the global products slice
-	if err := json.Unmarshal(data, target); err != nil {
-		return err
-	}
-
-	return nil
 }

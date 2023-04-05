@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/JoseObreque/go-web/internal/domain"
 	"github.com/JoseObreque/go-web/internal/product"
+	"github.com/JoseObreque/go-web/pkg/web"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -39,7 +39,7 @@ can be used to handle a GET request from the client for retrieving all products.
 func (h *ProductHandler) GetAll() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		products := h.service.GetAll()
-		c.JSON(http.StatusOK, products)
+		web.Success(c, 200, products)
 	}
 }
 
@@ -52,16 +52,17 @@ func (h *ProductHandler) GetById() gin.HandlerFunc {
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidId.Error()})
+			web.Failure(c, 400, ErrInvalidId)
 			return
 		}
 
 		targetProduct, err := h.service.GetById(id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			web.Failure(c, 404, err)
 			return
 		}
-		c.JSON(http.StatusOK, targetProduct)
+
+		web.Success(c, 200, targetProduct)
 	}
 }
 
@@ -75,17 +76,17 @@ func (h *ProductHandler) GetByPriceGt() gin.HandlerFunc {
 		stringPriceGt := c.Query("priceGt")
 		priceGt, err := strconv.ParseFloat(stringPriceGt, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidPrice.Error()})
+			web.Failure(c, 400, ErrInvalidPrice)
 			return
 		}
 
 		filteredProducts, err := h.service.GetByPriceGt(priceGt)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			web.Failure(c, 404, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, filteredProducts)
+		web.Success(c, 200, filteredProducts)
 	}
 }
 
@@ -98,32 +99,32 @@ func (h *ProductHandler) Create() gin.HandlerFunc {
 		// Checks if the given token is valid
 		err := isAuthorized(c)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			web.Failure(c, 401, err)
 			return
 		}
 
 		// Obtains the new product data from the request body
 		var newProduct domain.Product
 		if err := c.ShouldBindJSON(&newProduct); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidData.Error()})
+			web.Failure(c, 400, ErrInvalidData)
 			return
 		}
 
 		// Checks if the product expiration date is valid (DD/MM/YYYY)
 		validDate, err := validateDate(newProduct.Expiration)
 		if !validDate {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
 		// Creates the new product
 		createdProduct, err := h.service.Create(newProduct)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
-		c.JSON(http.StatusCreated, createdProduct)
+		web.Success(c, 201, createdProduct)
 	}
 }
 
@@ -136,7 +137,7 @@ func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 		// Checks if the given token is valid
 		err := isAuthorized(c)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			web.Failure(c, 401, err)
 			return
 		}
 
@@ -144,31 +145,31 @@ func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidId.Error()})
+			web.Failure(c, 400, ErrInvalidId)
 			return
 		}
 
 		// Extract the product data from the request body
 		var newProductData domain.Product
 		if err := c.ShouldBindJSON(&newProductData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidData.Error()})
+			web.Failure(c, 400, ErrInvalidData)
 			return
 		}
 		// Checks if the product expiration date is valid (DD/MM/YYYY)
 		isValidDate, err := validateDate(newProductData.Expiration)
 		if !isValidDate {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
 		// Updates the product
 		updatedProduct, err := h.service.Update(id, newProductData)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, updatedProduct)
+		web.Success(c, 200, updatedProduct)
 	}
 }
 
@@ -189,7 +190,7 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		// Checks if the given token is valid
 		err := isAuthorized(c)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			web.Failure(c, 401, err)
 			return
 		}
 
@@ -197,14 +198,14 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidId.Error()})
+			web.Failure(c, 400, ErrInvalidId)
 			return
 		}
 
 		// Extract the product data from the request body
 		var partialUpdateData Request
 		if err := c.ShouldBindJSON(&partialUpdateData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidData.Error()})
+			web.Failure(c, 400, ErrInvalidData)
 			return
 		}
 
@@ -221,7 +222,7 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		if update.Expiration != "" {
 			isValidDate, err := validateDate(update.Expiration)
 			if !isValidDate {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				web.Failure(c, 400, err)
 				return
 			}
 		}
@@ -229,11 +230,11 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		// Updates the product
 		updatedProduct, err := h.service.Update(id, update)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, updatedProduct)
+		web.Success(c, 200, updatedProduct)
 	}
 }
 
@@ -246,7 +247,7 @@ func (h *ProductHandler) Delete() gin.HandlerFunc {
 		// Checks if the given token is valid
 		err := isAuthorized(c)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			web.Failure(c, 401, err)
 			return
 		}
 
@@ -254,18 +255,18 @@ func (h *ProductHandler) Delete() gin.HandlerFunc {
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidId.Error()})
+			web.Failure(c, 400, ErrInvalidId)
 			return
 		}
 
 		// Deletes the product
 		err = h.service.Delete(id)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			web.Failure(c, 400, err)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "product deleted"})
+		web.Success(c, 200, "Product deleted successfully")
 	}
 }
 
