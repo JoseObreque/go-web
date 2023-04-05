@@ -35,9 +35,12 @@ func main() {
 	productGroup := router.Group("/products")
 	{
 		productGroup.GET("/all", productHandler.GetAll())
-		productGroup.GET("/:id", productHandler.GetById())         // using parameters
-		productGroup.GET("/search", productHandler.GetByPriceGt()) //using query parameters
+		productGroup.GET("/:id", productHandler.GetById())
+		productGroup.GET("/search", productHandler.GetByPriceGt())
 		productGroup.POST("/new", productHandler.Create())
+		productGroup.PUT("/:id", productHandler.FullUpdate())
+		productGroup.PATCH("/:id", productHandler.PartialUpdate())
+		productGroup.DELETE("/:id", productHandler.Delete())
 	}
 
 	// Start server
