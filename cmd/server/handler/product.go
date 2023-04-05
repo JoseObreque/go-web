@@ -6,6 +6,7 @@ import (
 	"github.com/JoseObreque/go-web/internal/product"
 	"github.com/JoseObreque/go-web/pkg/web"
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -266,7 +267,7 @@ func (h *ProductHandler) Delete() gin.HandlerFunc {
 			return
 		}
 
-		web.Success(c, 200, "Product deleted successfully")
+		web.Success(c, http.StatusNoContent, nil)
 	}
 }
 

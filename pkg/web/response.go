@@ -33,7 +33,7 @@ The Success function emits a successful response to the client.
 */
 func Success(c *gin.Context, status int, data interface{}) {
 	c.JSON(status, Response{
-		data,
+		Data: data,
 	})
 }
 
