@@ -6,6 +6,7 @@ import (
 	"github.com/JoseObreque/go-web/internal/product"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -94,9 +95,15 @@ can be used to handle a POST request from the client for product creation.
 */
 func (h *ProductHandler) Create() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var newProduct domain.Product
+		// Checks if the given token is valid
+		err := isAuthorized(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
 
 		// Obtains the new product data from the request body
+		var newProduct domain.Product
 		if err := c.ShouldBindJSON(&newProduct); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": ErrInvalidData.Error()})
 			return
@@ -126,6 +133,13 @@ can be used to handle a PUT request from the client for updating a product.
 */
 func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Checks if the given token is valid
+		err := isAuthorized(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
 		// Obtains the product id from a URL parameter
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
@@ -172,6 +186,13 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		Price       float64 `json:"price,omitempty"`
 	}
 	return func(c *gin.Context) {
+		// Checks if the given token is valid
+		err := isAuthorized(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
 		// Obtains the product id from a URL parameter
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
@@ -222,6 +243,13 @@ can be used to handle a DELETE request from the client for deleting a product.
 */
 func (h *ProductHandler) Delete() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Checks if the given token is valid
+		err := isAuthorized(c)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
 		// Obtains the product id from a URL parameter
 		stringId := c.Param("id")
 		id, err := strconv.Atoi(stringId)
@@ -257,4 +285,16 @@ func validateDate(date string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// Auxiliary function that checks if the given token is valid.
+func isAuthorized(c *gin.Context) error {
+	// Get the token from the header
+	token := c.GetHeader("token")
+
+	// Authentication
+	if token != os.Getenv("TOKEN") {
+		return errors.New("invalid token")
+	}
+	return nil
 }

@@ -6,14 +6,21 @@ import (
 	"github.com/JoseObreque/go-web/internal/domain"
 	"github.com/JoseObreque/go-web/internal/product"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"net/http"
 	"os"
 )
 
 func main() {
+	// Load environment variables
+	err := godotenv.Load("./cmd/local.env")
+	if err != nil {
+		panic(err)
+	}
+
 	// Extract products data from the JSON file
 	var productList []domain.Product
-	err := extractData("products.json", &productList)
+	err = extractData("products.json", &productList)
 	if err != nil {
 		panic(err)
 	}
