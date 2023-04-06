@@ -44,14 +44,16 @@ func createServerForTestProducts(token string) *gin.Engine {
 	router.Use(middleware.PanicLogger())
 
 	// Add the product handler to the router
-	productGroup := router.Group("/products")
+	generalGroup := router.Group("/api/v1")
+
+	productGroup := generalGroup.Group("/products")
 	{
 		productGroup.GET("/all", productHandler.GetAll())
 		productGroup.GET("/:id", productHandler.GetById())
 		productGroup.GET("/search", productHandler.GetByPriceGt())
 	}
 
-	protectedProductGroup := router.Group("/products")
+	protectedProductGroup := generalGroup.Group("/products")
 	protectedProductGroup.Use(middleware.TokenValidator())
 	{
 		protectedProductGroup.POST("/new", productHandler.Create())
@@ -75,7 +77,7 @@ func createRequestTest(method string, url string, body string) (*http.Request, *
 
 func TestProductHandler_GetAll_OK(t *testing.T) {
 	router := createServerForTestProducts("")
-	request, responseRecorder := createRequestTest(http.MethodGet, "https://localhost:8080/products/all", "")
+	request, responseRecorder := createRequestTest(http.MethodGet, "https://localhost:8080/api/v1/products/all", "")
 
 	// Expected response
 	jsonStore := store.NewJsonStore("products_copy.json")
@@ -101,7 +103,7 @@ func TestProductHandler_GetAll_OK(t *testing.T) {
 
 func TestProductHandler_GetById_OK(t *testing.T) {
 	router := createServerForTestProducts("")
-	request, responseRecorder := createRequestTest(http.MethodGet, "https://localhost:8080/products/1", "")
+	request, responseRecorder := createRequestTest(http.MethodGet, "https://localhost:8080/api/v1/products/1", "")
 
 	// Expected response
 	jsonStore := store.NewJsonStore("products_copy.json")
@@ -146,7 +148,7 @@ func TestProductHandler_Create_OK(t *testing.T) {
 	router := createServerForTestProducts("12345")
 	request, responseRecorder := createRequestTest(
 		http.MethodPost,
-		"https://localhost:8080/products/new",
+		"https://localhost:8080/api/v1/products/new",
 		string(expectedProductData),
 	)
 	request.Header.Add("token", "12345")
@@ -168,7 +170,7 @@ func TestProductHandler_Delete_OK(t *testing.T) {
 	router := createServerForTestProducts("12345")
 	request, responseRecorder := createRequestTest(
 		http.MethodDelete,
-		"https://localhost:8080/products/1",
+		"https://localhost:8080/api/v1/products/1",
 		"",
 	)
 	request.Header.Add("token", "12345")
@@ -199,7 +201,7 @@ func TestProductHandler_BadRequest(t *testing.T) {
 		// Create a request for every http method
 		request, responseRecorder := createRequestTest(
 			method,
-			"https://localhost:8080/products/badId",
+			"https://localhost:8080/api/v1/products/badId",
 			"",
 		)
 
@@ -250,7 +252,7 @@ func TestProductHandler_NotFound(t *testing.T) {
 		// Create a request for every http method
 		request, responseRecorder := createRequestTest(
 			method,
-			"https://localhost:8080/products/9999",
+			"https://localhost:8080/api/v1/products/9999",
 			string(bodyProduct),
 		)
 
@@ -301,7 +303,7 @@ func TestProductHandler_Unauthorized(t *testing.T) {
 			// Create a request for every http method
 			request, responseRecorder := createRequestTest(
 				method,
-				"https://localhost:8080/products/1",
+				"https://localhost:8080/api/v1/products/1",
 				string(bodyProduct),
 			)
 
@@ -341,7 +343,7 @@ func TestProductHandler_Unauthorized(t *testing.T) {
 		// Create the POST request
 		request, responseRecorder := createRequestTest(
 			http.MethodPost,
-			"https://localhost:8080/products/new",
+			"https://localhost:8080/api/v1/products/new",
 			string(bodyProduct),
 		)
 

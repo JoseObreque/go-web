@@ -35,10 +35,13 @@ func NewProductHandler(service product.Service) *ProductHandler {
 	}
 }
 
-/*
-The GetAll method returns all available products. It returns a HandlerFunc that
-can be used to handle a GET request from the client for retrieving all products.
-*/
+// GetAll godoc
+// @Summary List all products
+// @Tags Products
+// @Description List all available products
+// @Produce json
+// @Success 200 {object} web.Response
+// @Router /products/all [get]
 func (h *ProductHandler) GetAll() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		products := h.service.GetAll()
@@ -46,10 +49,16 @@ func (h *ProductHandler) GetAll() gin.HandlerFunc {
 	}
 }
 
-/*
-The GetById method returns a HandlerFunc that can be used to handle a GET request
-from the client for retrieving a single product based on its ID (sent as URL parameter).
-*/
+// GetById godoc
+// @Summary Get a specific product
+// @Tags Products
+// @Description Get a specific product based on its ID
+// @Produce json
+// @Param id path int true "Product ID"
+// @Success 200 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/{id} [get]
 func (h *ProductHandler) GetById() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		stringId := c.Param("id")
@@ -69,11 +78,16 @@ func (h *ProductHandler) GetById() gin.HandlerFunc {
 	}
 }
 
-/*
-The GetByPriceGt method returns a HandlerFunc that can be used to handle a GET request
-from the client for retrieving all products that have a price greater than the provided
-(as query parameter).
-*/
+// GetByPriceGt godoc
+// @Summary Get all products based on its price
+// @Tags Products
+// @Description Get all products with a price greater than the provided value
+// @Produce json
+// @Param priceGt query int true "Price"
+// @Success 200 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/search [get]
 func (h *ProductHandler) GetByPriceGt() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		stringPriceGt := c.Query("priceGt")
@@ -93,10 +107,18 @@ func (h *ProductHandler) GetByPriceGt() gin.HandlerFunc {
 	}
 }
 
-/*
-The Create method is used to create a new product. It returns a HandlerFunc that
-can be used to handle a POST request from the client for product creation.
-*/
+// Create godoc
+// @Summary Create a new product
+// @Tags Products
+// @Description Create a new product and store it in the database
+// @Accept json
+// @Produce json
+// @Param token header string true "Token"
+// @Param newProduct body domain.ProductRequest true "new product"
+// @Success 201 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/new [post]
 func (h *ProductHandler) Create() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Obtains the new product data from the request body
@@ -124,10 +146,19 @@ func (h *ProductHandler) Create() gin.HandlerFunc {
 	}
 }
 
-/*
-The FullUpdate method is used to update a product. It returns a HandlerFunc that
-can be used to handle a PUT request from the client for updating a product.
-*/
+// FullUpdate godoc
+// @Summary Update a product
+// @Tags Products
+// @Description Update all the fields of a product.
+// @Accept json
+// @Produce json
+// @Param token header string true "Token"
+// @Param id path int true "Product ID"
+// @Param partialUpdateData body domain.ProductRequest true "updated product"
+// @Success 200 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/{id} [put]
 func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Checks if the given token is valid
@@ -176,19 +207,20 @@ func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 	}
 }
 
-/*
-The PartialUpdate method is used to update some fields of a product. It returns a HandlerFunc
-that can be used to handle a PUT request from the client for partially updating a product.
-*/
+// PartialUpdate godoc
+// @Summary Partially update a product
+// @Tags Products
+// @Description Update some product fields data
+// @Accept json
+// @Produce json
+// @Param token header string true "Token"
+// @Param id path int true "Product ID"
+// @Param partialUpdateData body domain.ProductRequest true "updated product"
+// @Success 200 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/{id} [patch]
 func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
-	type Request struct {
-		Name        string  `json:"name,omitempty"`
-		Quantity    int     `json:"quantity,omitempty"`
-		CodeValue   string  `json:"code_value,omitempty"`
-		IsPublished bool    `json:"is_published,omitempty"`
-		Expiration  string  `json:"expiration,omitempty"`
-		Price       float64 `json:"price,omitempty"`
-	}
 	return func(c *gin.Context) {
 		// Checks if the given token is valid
 		err := isAuthorized(c)
@@ -206,7 +238,7 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 		}
 
 		// Extract the product data from the request body
-		var partialUpdateData Request
+		var partialUpdateData domain.ProductRequest
 		if err := c.ShouldBindJSON(&partialUpdateData); err != nil {
 			web.Failure(c, 400, ErrInvalidData)
 			return
@@ -247,10 +279,18 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 	}
 }
 
-/*
-The Delete method is used to delete a product. It returns a HandlerFunc that
-can be used to handle a DELETE request from the client for deleting a product.
-*/
+// Delete godoc
+// @Summary Delete a product
+// @Tags Products
+// @Description Delete permanently a product
+// @Accept json
+// @Produce json
+// @Param token header string true "Token"
+// @Param id path int true "Product ID"
+// @Success 204 {object} web.Response
+// @Failure 400 {object} web.ErrorResponse
+// @Failure 404 {object} web.ErrorResponse
+// @Router /products/{id} [delete]
 func (h *ProductHandler) Delete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Checks if the given token is valid

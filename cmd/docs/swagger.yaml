@@ -1,0 +1,260 @@
+basePath: /api/v1
+definitions:
+  domain.ProductRequest:
+    properties:
+      code_value:
+        example: COD123
+        type: string
+      expiration:
+        example: 25/08/2030
+        type: string
+      is_published:
+        example: true
+        type: boolean
+      name:
+        example: Pineapple
+        type: string
+      price:
+        example: 299
+        format: float64
+        type: number
+      quantity:
+        example: 100
+        type: integer
+    type: object
+  web.ErrorResponse:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  web.Response:
+    properties:
+      data: {}
+    type: object
+info:
+  contact:
+    name: API Support
+    url: https://developers.mercadolibre.cl/es_ar/support
+  description: This API handles MELI products data.
+  termsOfService: https://developers.mercadolibre.cl/es_ar/terminos-y-condiciones
+  title: MELI Bootcamp API
+  version: "1.0"
+paths:
+  /products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete permanently a product
+      parameters:
+      - description: Token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Delete a product
+      tags:
+      - Products
+    get:
+      description: Get a specific product based on its ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Get a specific product
+      tags:
+      - Products
+    patch:
+      consumes:
+      - application/json
+      description: Update some product fields data
+      parameters:
+      - description: Token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: updated product
+        in: body
+        name: partialUpdateData
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Partially update a product
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update all the fields of a product.
+      parameters:
+      - description: Token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: updated product
+        in: body
+        name: partialUpdateData
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Update a product
+      tags:
+      - Products
+  /products/all:
+    get:
+      description: List all available products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Response'
+      summary: List all products
+      tags:
+      - Products
+  /products/new:
+    post:
+      consumes:
+      - application/json
+      description: Create a new product and store it in the database
+      parameters:
+      - description: Token
+        in: header
+        name: token
+        required: true
+        type: string
+      - description: new product
+        in: body
+        name: newProduct
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Create a new product
+      tags:
+      - Products
+  /products/search:
+    get:
+      description: Get all products with a price greater than the provided value
+      parameters:
+      - description: Price
+        in: query
+        name: priceGt
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/web.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/web.ErrorResponse'
+      summary: Get all products based on its price
+      tags:
+      - Products
+swagger: "2.0"
