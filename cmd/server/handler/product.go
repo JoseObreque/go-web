@@ -99,13 +99,6 @@ can be used to handle a POST request from the client for product creation.
 */
 func (h *ProductHandler) Create() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Checks if the given token is valid
-		err := isAuthorized(c)
-		if err != nil {
-			web.Failure(c, 401, err)
-			return
-		}
-
 		// Obtains the new product data from the request body
 		var newProduct domain.Product
 		if err := c.ShouldBindJSON(&newProduct); err != nil {

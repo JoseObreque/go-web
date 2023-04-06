@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/JoseObreque/go-web/cmd/server/middleware"
 	"github.com/JoseObreque/go-web/internal/domain"
 	"github.com/JoseObreque/go-web/internal/product"
 	"github.com/JoseObreque/go-web/pkg/store"
@@ -47,10 +48,15 @@ func createServerForTestProducts(token string) *gin.Engine {
 		productGroup.GET("/all", productHandler.GetAll())
 		productGroup.GET("/:id", productHandler.GetById())
 		productGroup.GET("/search", productHandler.GetByPriceGt())
-		productGroup.POST("/new", productHandler.Create())
-		productGroup.PUT("/:id", productHandler.FullUpdate())
-		productGroup.PATCH("/:id", productHandler.PartialUpdate())
-		productGroup.DELETE("/:id", productHandler.Delete())
+	}
+
+	protectedProductGroup := router.Group("/products")
+	protectedProductGroup.Use(middleware.TokenValidator())
+	{
+		protectedProductGroup.POST("/new", productHandler.Create())
+		protectedProductGroup.PUT("/:id", productHandler.FullUpdate())
+		protectedProductGroup.PATCH("/:id", productHandler.PartialUpdate())
+		protectedProductGroup.DELETE("/:id", productHandler.Delete())
 	}
 
 	return router

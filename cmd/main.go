@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/JoseObreque/go-web/cmd/server/handler"
+	"github.com/JoseObreque/go-web/cmd/server/middleware"
 	"github.com/JoseObreque/go-web/internal/product"
 	"github.com/JoseObreque/go-web/pkg/store"
 	"github.com/gin-gonic/gin"
@@ -42,10 +43,16 @@ func main() {
 		productGroup.GET("/all", productHandler.GetAll())
 		productGroup.GET("/:id", productHandler.GetById())
 		productGroup.GET("/search", productHandler.GetByPriceGt())
-		productGroup.POST("/new", productHandler.Create())
-		productGroup.PUT("/:id", productHandler.FullUpdate())
-		productGroup.PATCH("/:id", productHandler.PartialUpdate())
-		productGroup.DELETE("/:id", productHandler.Delete())
+
+	}
+
+	protectedProductGroup := router.Group("/products")
+	protectedProductGroup.Use(middleware.TokenValidator())
+	{
+		protectedProductGroup.POST("/new", productHandler.Create())
+		protectedProductGroup.PUT("/:id", productHandler.FullUpdate())
+		protectedProductGroup.PATCH("/:id", productHandler.PartialUpdate())
+		protectedProductGroup.DELETE("/:id", productHandler.Delete())
 	}
 
 	// Start server
