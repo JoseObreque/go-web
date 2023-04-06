@@ -16,6 +16,8 @@ var (
 	ErrInvalidId    = errors.New("invalid product id")
 	ErrInvalidPrice = errors.New("invalid product price")
 	ErrInvalidData  = errors.New("invalid product data")
+	ErrNotFound     = errors.New("product not found")
+	ErrInvalidCode  = errors.New("invalid product code value")
 )
 
 // ProductHandler is a handler for the product endpoints.
@@ -165,7 +167,14 @@ func (h *ProductHandler) FullUpdate() gin.HandlerFunc {
 
 		// Updates the product
 		updatedProduct, err := h.service.Update(id, newProductData)
-		if err != nil {
+
+		// Check for errors
+		if err != nil && err.Error() == ErrNotFound.Error() {
+			web.Failure(c, 404, err)
+			return
+		}
+
+		if err != nil && err.Error() == ErrInvalidCode.Error() {
 			web.Failure(c, 400, err)
 			return
 		}
@@ -230,7 +239,13 @@ func (h *ProductHandler) PartialUpdate() gin.HandlerFunc {
 
 		// Updates the product
 		updatedProduct, err := h.service.Update(id, update)
-		if err != nil {
+
+		// Check for errors
+		if err != nil && err.Error() == ErrNotFound.Error() {
+			web.Failure(c, 404, err)
+			return
+		}
+		if err != nil && err.Error() == ErrInvalidCode.Error() {
 			web.Failure(c, 400, err)
 			return
 		}
@@ -263,7 +278,7 @@ func (h *ProductHandler) Delete() gin.HandlerFunc {
 		// Deletes the product
 		err = h.service.Delete(id)
 		if err != nil {
-			web.Failure(c, 400, err)
+			web.Failure(c, 404, err)
 			return
 		}
 

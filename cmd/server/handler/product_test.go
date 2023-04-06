@@ -175,3 +175,181 @@ func TestProductHandler_Delete_OK(t *testing.T) {
 	assert.Nil(t, actualResponse)
 
 }
+
+func TestProductHandler_BadRequest(t *testing.T) {
+	// Define a slice of http methods
+	httpMethods := []string{
+		http.MethodGet,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+	}
+	// Create a new router
+	router := createServerForTestProducts("12345")
+
+	// Iterate through the http methods slice
+	for _, method := range httpMethods {
+		// Create a request for every http method
+		request, responseRecorder := createRequestTest(
+			method,
+			"https://localhost:8080/products/badId",
+			"",
+		)
+
+		// Attach the token to the header and serve the request
+		request.Header.Add("token", "12345")
+		router.ServeHTTP(responseRecorder, request)
+
+		// Unmarshal the actual response
+		actualResponse := map[string]interface{}{}
+		err := json.Unmarshal(responseRecorder.Body.Bytes(), &actualResponse)
+		if err != nil {
+			panic(err)
+		}
+
+		// Assertions
+		assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+		assert.Equal(t, http.StatusText(http.StatusBadRequest), actualResponse["code"])
+	}
+}
+
+func TestProductHandler_NotFound(t *testing.T) {
+	// Define a slice of http methods
+	httpMethods := []string{
+		http.MethodGet,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+	}
+	// Create a new router
+	router := createServerForTestProducts("12345")
+
+	// Create a body for the http methods that requires one
+	newProduct := domain.Product{
+		Name:        "New Product",
+		Quantity:    100,
+		CodeValue:   "NewCode123",
+		IsPublished: true,
+		Expiration:  "25/10/2030",
+		Price:       900,
+	}
+	bodyProduct, err := json.Marshal(newProduct)
+	if err != nil {
+		panic(err)
+	}
+
+	// Iterate through the http methods slice
+	for _, method := range httpMethods {
+		// Create a request for every http method
+		request, responseRecorder := createRequestTest(
+			method,
+			"https://localhost:8080/products/9999",
+			string(bodyProduct),
+		)
+
+		// Attach the token to the header and serve the request
+		request.Header.Add("token", "12345")
+		router.ServeHTTP(responseRecorder, request)
+
+		// Unmarshal the actual response
+		actualResponse := map[string]interface{}{}
+		err := json.Unmarshal(responseRecorder.Body.Bytes(), &actualResponse)
+		if err != nil {
+			panic(err)
+		}
+
+		// Assertions
+		assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+		assert.Equal(t, http.StatusText(http.StatusNotFound), actualResponse["code"])
+	}
+}
+
+func TestProductHandler_Unauthorized(t *testing.T) {
+	t.Run("Unauthorized PUT-PATCH-DELETE", func(t *testing.T) {
+		// Define a slice of http methods
+		httpMethods := []string{
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		}
+		// Create a new router
+		router := createServerForTestProducts("12345")
+
+		// Create a body for the http methods that requires one
+		newProduct := domain.Product{
+			Name:        "New Product",
+			Quantity:    100,
+			CodeValue:   "NewCode123",
+			IsPublished: true,
+			Expiration:  "25/10/2030",
+			Price:       900,
+		}
+		bodyProduct, err := json.Marshal(newProduct)
+		if err != nil {
+			panic(err)
+		}
+
+		// Iterate through the http methods slice
+		for _, method := range httpMethods {
+			// Create a request for every http method
+			request, responseRecorder := createRequestTest(
+				method,
+				"https://localhost:8080/products/1",
+				string(bodyProduct),
+			)
+
+			// Serve the request
+			router.ServeHTTP(responseRecorder, request)
+
+			// Unmarshal the actual response
+			actualResponse := map[string]interface{}{}
+			err := json.Unmarshal(responseRecorder.Body.Bytes(), &actualResponse)
+			if err != nil {
+				panic(err)
+			}
+
+			// Assertions
+			assert.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+			assert.Equal(t, http.StatusText(http.StatusUnauthorized), actualResponse["code"])
+		}
+	})
+	t.Run("Unauthorized POST", func(t *testing.T) {
+		// Create a new router
+		router := createServerForTestProducts("12345")
+
+		// Create a body for the POST request
+		newProduct := domain.Product{
+			Name:        "New Product",
+			Quantity:    100,
+			CodeValue:   "NewCode123",
+			IsPublished: true,
+			Expiration:  "25/10/2030",
+			Price:       900,
+		}
+		bodyProduct, err := json.Marshal(newProduct)
+		if err != nil {
+			panic(err)
+		}
+
+		// Create the POST request
+		request, responseRecorder := createRequestTest(
+			http.MethodPost,
+			"https://localhost:8080/products/new",
+			string(bodyProduct),
+		)
+
+		// Serve the request
+		router.ServeHTTP(responseRecorder, request)
+
+		// Unmarshal the actual response
+		actualResponse := map[string]interface{}{}
+		err = json.Unmarshal(responseRecorder.Body.Bytes(), &actualResponse)
+		if err != nil {
+			panic(err)
+		}
+
+		// Assertions
+		assert.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+		assert.Equal(t, http.StatusText(http.StatusUnauthorized), actualResponse["code"])
+	})
+}
