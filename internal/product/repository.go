@@ -85,7 +85,7 @@ func (r *RepositoryImpl) Update(id int, updatedProduct domain.Product) (domain.P
 	for i, product := range r.productList {
 		if product.Id == id {
 			// Validate the updated code value
-			if !r.validateCodeValue(updatedProduct.CodeValue) || product.Expiration != updatedProduct.Expiration {
+			if !r.validateCodeValue(updatedProduct.CodeValue) && product.CodeValue != updatedProduct.CodeValue {
 				return domain.Product{}, ErrInvalidCode
 			}
 			// Store the updated product and return it
