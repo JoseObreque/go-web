@@ -40,7 +40,8 @@ func createServerForTestProducts(token string) *gin.Engine {
 	productHandler := NewProductHandler(service)
 
 	// Define a new router
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middleware.PanicLogger())
 
 	// Add the product handler to the router
 	productGroup := router.Group("/products")

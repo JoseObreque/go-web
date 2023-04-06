@@ -30,11 +30,17 @@ func main() {
 	productHandler := handler.NewProductHandler(service)
 
 	// Create new router
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middleware.PanicLogger())
 
 	// Ping endpoint
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
+	})
+
+	// Panic endpoint
+	router.GET("/panic", func(c *gin.Context) {
+		panic("oh no!")
 	})
 
 	// Products endpoints
